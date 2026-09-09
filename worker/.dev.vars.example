@@ -1,0 +1,6 @@
+STEAM_API_KEY=replace_with_your_steam_web_api_key
+STEAMWEBAPI_KEY=replace_with_your_inventory_provider_key
+RATE_LIMIT_SALT=replace_with_a_long_random_secret
+CONTROLLER_NAME=Your name or organization
+PRIVACY_CONTACT=you@example.com
+DATA_COUNTRIES=List actual processing and storage countries for your deployment

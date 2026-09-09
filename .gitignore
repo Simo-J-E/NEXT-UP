@@ -1,0 +1,14 @@
+node_modules/
+dist/
+worker-dist/
+.env
+.env.local
+.dev.vars
+worker/.dev.vars
+.wrangler/
+playwright-report/
+test-results/
+coverage/
+*.log
+
+worker/wrangler.deploy.json
