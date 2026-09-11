@@ -59,7 +59,10 @@ export function InventoryView({
   });
   const allItems = loadedInventories.flatMap((loaded) => loaded.items);
   const allTotal = sumPrices(
-    allItems.map((item) => ({ price: itemPrice(item), quantity: item.quantity })),
+    allItems.map((item) => ({
+      price: itemPrice(item),
+      quantity: item.quantity,
+    })),
   );
   const completeInventories = loadedInventories.filter(
     (loaded) => loaded.status === 'complete',
