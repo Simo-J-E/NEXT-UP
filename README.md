@@ -1,6 +1,6 @@
 # NEXT UP
 
-A game picker, Steam library browser, and inventory viewer. React, strict TypeScript, Tailwind, a Cloudflare Worker, and D1. The interface opens into the wheel; there is no landing page or account system.
+A game picker, Steam account calculator, library browser, and inventory viewer. React, strict TypeScript, Tailwind, a Cloudflare Worker, and D1. The interface opens into the wheel; there is no landing page or account system. The Library view includes SteamDB-style account statistics, while Inventory can scan every configured supported inventory in one pass.
 
 ## Run locally
 
@@ -38,6 +38,13 @@ Get a [Steam Web API key](https://steamcommunity.com/dev/apikey) and review the 
 SteamWebAPI is a commercial third party, not Valve. Review its [documentation](https://www.steamwebapi.com/api/steam/documentation), [inventory contract](https://api.steamwebapi.com/steam-inventory-api), [plans](https://www.steamwebapi.com/pricing), [terms](https://www.steamwebapi.com/legal/terms), and [privacy policy](https://www.steamwebapi.com/legal/privacy). Choose a plan that includes **both inventory and items endpoints**. The free allowance is not sufficient for this application. Endpoint access, quotas, and prices depend on the plan; confirm them before paying. Fresh inventory requests can consume extra credits. Provider terms restrict redistribution and competing databases; obtain any permission required by your intended deployment.
 
 The Worker defaults to 16 upstream requests per minute and 300 per day **per host**. Set `UPSTREAM_PER_MINUTE` and `UPSTREAM_PER_DAY` to your actual allowances. A limit pauses loading; received items remain available and pagination can resume. Provider HTTP contracts were checked against documentation; authenticated live responses were not tested for this delivery.
+
+## Account calculator and full inventory scan
+
+- **Scan everything** walks through CS2, Dota 2, Team Fortress 2, Steam Community, and Rust, follows pagination, saves every returned asset locally, and keeps going when one inventory is private or unavailable. The combined subtotal is shown above the per-game tabs.
+- The account calculator shows current tracked value, total recorded hours, played percentage, pile of shame, current library value, loaded inventory value, average game price, price per hour, Steam level, and account age when Steam exposes them.
+- The playful stats are intentionally jokes: **Grass required** scales with playtime, **Wallet cooldown** scales with tracked current value, and **Financial advisers required** increases with the same estimate. They are not health or financial advice.
+- Like SteamDB's calculator, library value is an estimate from current prices, not the amount actually spent. Games with under five minutes are treated as unplayed for the pile-of-shame figure.
 
 ## What the numbers mean
 
@@ -106,7 +113,7 @@ npx playwright install chromium
 npm run test:e2e              # Desktop + mobile, persistence, errors, keyboard, axe
 ```
 
-Delivery verification: 37 Vitest tests passed; TypeScript, ESLint, frontend build, and Worker dry-run build passed. The demo layout was inspected in a browser. A browser compatibility issue in roll IDs was found and corrected; the final interactive flows still need the included Playwright suite, which could not be run in this delivery environment. No authenticated live-provider check was run.
+The repository includes Vitest, TypeScript, ESLint, frontend build, Worker dry-run, Playwright, and axe checks in CI. For this edited archive, the changed TypeScript/TSX files were syntax-checked locally; a complete dependency install was unavailable in the delivery environment, so run `npm ci && npm run check` after extracting before deployment. No authenticated live-provider check was run.
 
 The optional **Live provider check** workflow is separate from normal CI. Set repository variable `API_BASE_URL`; optionally add secret `LIVE_STEAM_PROFILE` for a profile lookup. Locally, use `LIVE_API_BASE=https://YOUR_WORKER_ORIGIN npm run test:live`. Personal response data is omitted from logs. This checks health and an optional profile contract, not every pricing/inventory provider path.
 

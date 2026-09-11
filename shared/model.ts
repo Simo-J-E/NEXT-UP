@@ -67,6 +67,8 @@ export const profileSchema = z.object({
   name: z.string().max(160),
   avatar: imageSchema,
   visibility: z.enum(['public', 'private', 'unavailable']),
+  level: z.number().int().nonnegative().optional(),
+  createdAt: dateSchema.nullable().optional(),
 });
 export const librarySchema = z.object({
   profile: profileSchema,

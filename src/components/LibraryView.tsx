@@ -4,6 +4,7 @@ import { hours, isStale, money, sumPrices } from '../../shared/core';
 import { storeKey, type Game, type State } from '../../shared/model';
 import { Artwork, Empty } from './Primitives';
 import { Bars } from './Charts';
+import { AccountOverview } from './AccountOverview';
 
 export function LibraryView({
   state,
@@ -103,6 +104,7 @@ export function LibraryView({
           {priceBusy ? 'Loading prices…' : 'Refresh store prices'}
         </button>
       </div>
+      <AccountOverview state={state} />
       {state.library?.status !== 'public' && state.library && (
         <p className="notice">{state.library.message}</p>
       )}

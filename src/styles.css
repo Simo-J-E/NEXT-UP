@@ -1809,3 +1809,190 @@ dialog::backdrop {
     scroll-behavior: auto !important;
   }
 }
+
+/* SteamDB-style account calculator with deliberately unserious side statistics. */
+.account-overview {
+  margin: 28px 0;
+  border-top: 1px solid var(--line);
+  padding-top: 26px;
+}
+.account-overview-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 16px;
+}
+.account-overview-heading h2 {
+  margin: 5px 0 0;
+  font-size: clamp(1.35rem, 2.2vw, 1.8rem);
+}
+.account-overview-note {
+  color: var(--muted);
+  font-size: 0.75rem;
+  text-align: right;
+}
+.calculator-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  overflow: hidden;
+  background: #1e241a;
+}
+.calculator-grid > div {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  padding: 19px;
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+.calculator-grid > div:nth-child(4n) {
+  border-right: 0;
+}
+.calculator-grid > div:nth-last-child(-n + 4) {
+  border-bottom: 0;
+}
+.calculator-grid span,
+.roast-label {
+  color: #bec6b0;
+  font-size: 0.75rem;
+  letter-spacing: 0.035em;
+}
+.calculator-grid strong {
+  margin: 5px 0 4px;
+  font-size: clamp(1.35rem, 2.1vw, 1.85rem);
+  letter-spacing: -0.04em;
+  font-weight: 620;
+}
+.calculator-grid small {
+  color: var(--muted);
+  line-height: 1.45;
+}
+.roast-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+.roast-grid article {
+  min-width: 0;
+  padding: 18px;
+  border: 1px solid #59624f;
+  border-radius: 4px;
+  background: #24291f;
+}
+.roast-grid strong {
+  display: block;
+  margin: 7px 0 7px;
+  color: var(--accent);
+  font-size: 1.45rem;
+  letter-spacing: -0.025em;
+}
+.roast-grid p,
+.account-punchline {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.8125rem;
+}
+.account-punchline {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border-left: 3px solid var(--accent);
+  background: #211f1b;
+}
+.account-punchline strong {
+  color: #f2f0e9;
+}
+@media (max-width: 1000px) {
+  .calculator-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .calculator-grid > div,
+  .calculator-grid > div:nth-child(4n) {
+    border-right: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+  }
+  .calculator-grid > div:nth-child(2n) {
+    border-right: 0;
+  }
+  .calculator-grid > div:nth-last-child(-n + 2) {
+    border-bottom: 0;
+  }
+}
+@media (max-width: 760px) {
+  .roast-grid {
+    grid-template-columns: 1fr;
+  }
+  .account-overview-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .account-overview-note {
+    text-align: left;
+  }
+}
+@media (max-width: 560px) {
+  .calculator-grid {
+    grid-template-columns: 1fr;
+  }
+  .calculator-grid > div,
+  .calculator-grid > div:nth-child(2n),
+  .calculator-grid > div:nth-child(4n),
+  .calculator-grid > div:nth-last-child(-n + 2) {
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .calculator-grid > div:last-child {
+    border-bottom: 0;
+  }
+}
+
+.inventory-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.all-inventory-summary {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.65fr) 1.35fr;
+  gap: 24px;
+  align-items: center;
+  padding: 19px 21px;
+  margin: 4px 0 16px;
+  border: 1px solid #5d684f;
+  border-radius: 4px;
+  background: #20251d;
+}
+.all-inventory-summary > div {
+  display: flex;
+  flex-direction: column;
+}
+.all-inventory-summary strong {
+  margin: 4px 0 2px;
+  color: var(--accent);
+  font-size: clamp(1.65rem, 3vw, 2.25rem);
+  letter-spacing: -0.045em;
+}
+.all-inventory-summary small,
+.all-inventory-summary p {
+  color: var(--muted);
+  font-size: 0.8125rem;
+}
+.all-inventory-summary p {
+  margin: 0;
+  line-height: 1.6;
+}
+@media (max-width: 760px) {
+  .inventory-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+  .all-inventory-summary {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+}

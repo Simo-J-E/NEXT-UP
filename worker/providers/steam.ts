@@ -14,6 +14,7 @@ const playerSchema = z.object({
   personaname: z.string().default('Steam player'),
   avatarfull: z.string().default(''),
   communityvisibilitystate: z.number().optional(),
+  timecreated: z.number().int().nonnegative().optional(),
 });
 const ownedSchema = z.object({
   response: z.object({
@@ -112,7 +113,7 @@ export async function loadLibrary(env: Env, input: string): Promise<Library> {
       );
     steamId = parseProfile(data.response.steamid).value;
   }
-  const [profileResult, gamesResult] = await Promise.allSettled([
+  const [profileResult, gamesResult, levelResult] = await Promise.allSettled([
     steamCall(env, 'ISteamUser/GetPlayerSummaries/v2/', { steamids: steamId }),
     steamCall(env, 'IPlayerService/GetOwnedGames/v1/', {
       steamid: steamId,
@@ -121,6 +122,7 @@ export async function loadLibrary(env: Env, input: string): Promise<Library> {
       include_free_sub: 'true',
       skip_unvetted_apps: 'false',
     }),
+    steamCall(env, 'IPlayerService/GetSteamLevel/v1/', { steamid: steamId }),
   ]);
   let profile: Library['profile'] = {
     steamId,
@@ -143,7 +145,18 @@ export async function loadLibrary(env: Env, input: string): Promise<Library> {
       name: player.personaname,
       avatar: /^https:\/\//.test(player.avatarfull) ? player.avatarfull : '',
       visibility: player.communityvisibilitystate === 3 ? 'public' : 'private',
+      createdAt: player.timecreated
+        ? new Date(player.timecreated * 1000).toISOString()
+        : null,
     };
+  }
+  if (levelResult.status === 'fulfilled') {
+    const level = z
+      .object({
+        response: z.object({ player_level: z.number().int().nonnegative() }),
+      })
+      .safeParse(levelResult.value);
+    if (level.success) profile.level = level.data.response.player_level;
   }
   const library =
     gamesResult.status === 'fulfilled'

@@ -24,6 +24,7 @@ import {
 import {
   emptyState,
   gameSchema,
+  INVENTORIES,
   marketKey,
   storeKey,
   type Game,
@@ -263,28 +264,27 @@ export default function App() {
       }
     }
   }
-  async function loadInventory(resume: boolean) {
-    const steamId = state.library?.profile.steamId;
-    if (!steamId || pending.current || state.mode === 'demo') return;
-    pending.current = true;
-    setInventoryBusy(true);
-    setNotice('');
-    const abort = new AbortController();
-    controller.current = abort;
+  async function fetchInventory(
+    targetAppId: number,
+    resume: boolean,
+    signal: AbortSignal,
+  ) {
+    const steamId = current.current.library?.profile.steamId;
+    if (!steamId) throw new Error('Load a Steam profile first.');
     let items = resume
-      ? current.current.inventories[String(appId)]?.items || []
+      ? current.current.inventories[String(targetAppId)]?.items || []
       : [];
     let cursor = resume
-      ? current.current.inventories[String(appId)]?.cursor || undefined
+      ? current.current.inventories[String(targetAppId)]?.cursor || undefined
       : undefined;
     const seen = new Set<string>();
     try {
       for (let page = 0; page < 100; page++) {
         const result = await api.inventory(
           steamId,
-          appId,
+          targetAppId,
           cursor,
-          abort.signal,
+          signal,
         );
         if (
           result.cursor &&
@@ -300,22 +300,24 @@ export default function App() {
         ];
         await update((old) => ({
           ...old,
-          inventories: { ...old.inventories, [appId]: { ...result, items } },
+          inventories: {
+            ...old.inventories,
+            [targetAppId]: { ...result, items },
+          },
         }));
         if (!result.cursor) {
           try {
-            await marketPrices(items, abort.signal);
+            await marketPrices(items, signal);
           } catch (error) {
-            setNotice(
-              abort.signal.aborted
-                ? 'Inventory loaded. Price refresh stopped.'
-                : error instanceof Error
+            if (!signal.aborted)
+              setNotice(
+                error instanceof Error
                   ? error.message
                   : 'Inventory loaded. Prices are unavailable.',
-            );
+              );
           }
-          await recordSnapshot(appId);
-          return;
+          await recordSnapshot(targetAppId);
+          return { appId: targetAppId, status: 'complete' as const, items };
         }
         seen.add(result.cursor);
         cursor = result.cursor;
@@ -324,33 +326,112 @@ export default function App() {
             'The device limit is 100,000 assets. This inventory remains incomplete.',
           );
       }
-      setNotice(
-        '100 inventory pages were loaded. Use Continue loading for the remaining pages.',
+      throw new Error(
+        '100 inventory pages were loaded. Continue loading to fetch the rest.',
       );
     } catch (error) {
-      const message = abort.signal.aborted
+      const privateState =
+        error instanceof ClientError && error.code === 'inventory-private';
+      const message = signal.aborted
         ? 'Loading stopped. Returned items were saved.'
         : error instanceof Error
           ? error.message
           : 'Inventory is unavailable.';
-      const privateState =
-        error instanceof ClientError && error.code === 'inventory-private';
+      const status = privateState
+        ? ('private' as const)
+        : items.length || cursor
+          ? ('partial' as const)
+          : ('unavailable' as const);
       await update((old) => ({
         ...old,
         inventories: {
           ...old.inventories,
-          [appId]: {
+          [targetAppId]: {
             steamId,
-            appId,
+            appId: targetAppId,
             items,
-            status: privateState ? 'private' : 'partial',
+            status,
             cursor: cursor || null,
             fetchedAt: new Date().toISOString(),
             message,
           },
         },
       }));
-      setNotice(message);
+      if (signal.aborted) throw error;
+      return { appId: targetAppId, status, items };
+    }
+  }
+  async function loadInventory(resume: boolean) {
+    if (
+      !state.library?.profile.steamId ||
+      pending.current ||
+      state.mode === 'demo'
+    )
+      return;
+    pending.current = true;
+    setInventoryBusy(true);
+    setNotice('');
+    const abort = new AbortController();
+    controller.current = abort;
+    try {
+      const result = await fetchInventory(appId, resume, abort.signal);
+      if (!abort.signal.aborted)
+        setNotice(
+          result.status === 'complete'
+            ? `${result.items.length} distinct items loaded for this inventory.`
+            : current.current.inventories[String(appId)]?.message ||
+                'Inventory loading is incomplete.',
+        );
+    } catch (error) {
+      if (!abort.signal.aborted)
+        setNotice(
+          error instanceof Error ? error.message : 'Inventory is unavailable.',
+        );
+    } finally {
+      pending.current = false;
+      setInventoryBusy(false);
+    }
+  }
+  async function loadAllInventories() {
+    if (
+      !state.library?.profile.steamId ||
+      pending.current ||
+      state.mode === 'demo'
+    )
+      return;
+    pending.current = true;
+    setInventoryBusy(true);
+    setNotice('Starting full inventory scan…');
+    const abort = new AbortController();
+    controller.current = abort;
+    let complete = 0;
+    let privateCount = 0;
+    let unavailable = 0;
+    try {
+      for (let index = 0; index < INVENTORIES.length; index++) {
+        const game = INVENTORIES[index]!;
+        setAppId(game.appId);
+        setNotice(
+          `Scanning ${game.name} · ${index + 1} / ${INVENTORIES.length}`,
+        );
+        const result = await fetchInventory(game.appId, false, abort.signal);
+        if (result.status === 'complete') complete++;
+        else if (result.status === 'private') privateCount++;
+        else unavailable++;
+        if (abort.signal.aborted) break;
+      }
+      if (!abort.signal.aborted)
+        setNotice(
+          `Full scan finished: ${complete} complete, ${privateCount} private, ${unavailable} unavailable or partial.`,
+        );
+    } catch (error) {
+      setNotice(
+        abort.signal.aborted
+          ? 'Full scan stopped. Everything returned so far was saved.'
+          : error instanceof Error
+            ? error.message
+            : 'Full inventory scan stopped.',
+      );
     } finally {
       pending.current = false;
       setInventoryBusy(false);
@@ -792,6 +873,7 @@ export default function App() {
             appId={appId}
             setAppId={setAppId}
             onLoad={(resume) => void loadInventory(resume)}
+            onLoadAll={() => void loadAllInventories()}
             onPrices={() => void refreshMarketPrices()}
             busy={inventoryBusy || priceBusy}
             onCancel={() => controller.current?.abort()}

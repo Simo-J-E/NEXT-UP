@@ -25,6 +25,7 @@ export function InventoryView({
   appId,
   setAppId,
   onLoad,
+  onLoadAll,
   onPrices,
   busy,
   onCancel,
@@ -33,6 +34,7 @@ export function InventoryView({
   appId: number;
   setAppId: (id: number) => void;
   onLoad: (resume: boolean) => void;
+  onLoadAll: () => void;
   onPrices: () => void;
   busy: boolean;
   onCancel: () => void;
@@ -51,6 +53,17 @@ export function InventoryView({
   const total = sumPrices(
     items.map((item) => ({ price: itemPrice(item), quantity: item.quantity })),
   );
+  const loadedInventories = INVENTORIES.flatMap((game) => {
+    const loaded = state.inventories[String(game.appId)];
+    return loaded ? [loaded] : [];
+  });
+  const allItems = loadedInventories.flatMap((loaded) => loaded.items);
+  const allTotal = sumPrices(
+    allItems.map((item) => ({ price: itemPrice(item), quantity: item.quantity })),
+  );
+  const completeInventories = loadedInventories.filter(
+    (loaded) => loaded.status === 'complete',
+  ).length;
   const visible = items
     .filter((item) =>
       `${item.name} ${item.category} ${item.condition || ''}`
@@ -122,14 +135,39 @@ export function InventoryView({
           <span className="eyebrow">THE ITEM DRAWER</span>
           <h1>Your inventory</h1>
         </div>
-        <button
-          className="secondary"
-          disabled={busy || state.mode === 'demo' || !state.library}
-          onClick={() => onLoad(false)}
-        >
-          <RefreshCw size={17} />
-          Refresh inventory
-        </button>
+        <div className="inventory-actions">
+          <button
+            className="primary"
+            disabled={busy || state.mode === 'demo' || !state.library}
+            onClick={onLoadAll}
+          >
+            <Box size={17} />
+            Scan everything
+          </button>
+          <button
+            className="secondary"
+            disabled={busy || state.mode === 'demo' || !state.library}
+            onClick={() => onLoad(false)}
+          >
+            <RefreshCw size={17} />
+            Refresh selected
+          </button>
+        </div>
+      </div>
+      <div className="all-inventory-summary">
+        <div>
+          <span className="eyebrow">ALL LOADED INVENTORIES</span>
+          <strong>{money(allTotal.total)}</strong>
+          <small>
+            {allItems.reduce((n, item) => n + item.quantity, 0)} items ·{' '}
+            {completeInventories} / {INVENTORIES.length} inventories complete
+          </small>
+        </div>
+        <p>
+          Scan everything checks every supported Steam inventory, keeps every
+          returned item, and combines the priced total here. Private inventories
+          stay marked private instead of stopping the rest of the scan.
+        </p>
       </div>
       <div className="inventory-tabs" role="group" aria-label="Inventory game">
         {INVENTORIES.map((game) => (
