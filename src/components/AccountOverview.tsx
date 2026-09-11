@@ -223,8 +223,8 @@ export function AccountOverview({ state }: { state: State }) {
       {mostPlayed && (
         <p className="account-punchline">
           Biggest time sink: <strong>{mostPlayed.name}</strong> at{' '}
-          {number.format((mostPlayed.minutes || 0) / 60)} hours. It knows what it
-          did.
+          {number.format((mostPlayed.minutes || 0) / 60)} hours. It knows what
+          it did.
         </p>
       )}
     </section>
